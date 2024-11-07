@@ -1,0 +1,142 @@
+---
+title: "Project 2"
+author: "Upendra Joshi"
+format: html
+editor: visual
+---
+
+
+
+```{r}
+
+
+# Load required libraries
+library(tidyverse)
+library(ggplot2)
+library(gridExtra)
+
+# Read the data
+data <- read.csv("C:\\Users\\upnjo\\OneDrive\\Documents\\Project2\\user_behavior_dataset.csv")
+
+# 1. One-way contingency tables
+cat("One-way Contingency Tables:\n")
+cat("\nDevice Model Distribution:\n")
+print(table(data$Device.Model))
+cat("\nOperating System Distribution:\n")
+print(table(data$Operating.System))
+cat("\nUser Behavior Class Distribution:\n")
+print(table(data$User.Behavior.Class))
+
+# 2. Two-way contingency tables
+cat("\nTwo-way Contingency Tables:\n")
+cat("\nDevice Model by Operating System:\n")
+print(table(data$Device.Model, data$Operating.System))
+cat("\nUser Behavior Class by Gender:\n")
+print(table(data$User.Behavior.Class, data$Gender))
+
+# 3. Numerical summaries by categorical variables
+# Function to calculate summary statistics
+# First, let's see the actual column names in your data
+names(data)
+
+# Modify the function to handle column names with spaces
+# Function with correct column names
+get_summary_stats <- function(data, group_var, numeric_var) {
+  data %>%
+    group_by(!!sym(group_var)) %>%
+    summarise(
+      Mean = mean(!!sym(numeric_var)),
+      Median = median(!!sym(numeric_var)),
+      SD = sd(!!sym(numeric_var)),
+      Min = min(!!sym(numeric_var)),
+      Max = max(!!sym(numeric_var))
+    )
+}
+
+# Print summaries using exact column names from your data
+cat("\nApp Usage Time Summary by Device Model:\n")
+print(get_summary_stats(data, "Device.Model", "App.Usage.Time..min.day."))
+
+cat("\nBattery Drain Summary by Operating System:\n")
+print(get_summary_stats(data, "Operating.System", "Battery.Drain..mAh.day."))
+
+# For other variables
+cat("\nScreen Time Summary by Device Model:\n")
+print(get_summary_stats(data, "Device.Model", "Screen.On.Time..hours.day."))
+
+cat("\nData Usage Summary by Device Model:\n")
+print(get_summary_stats(data, "Device.Model", "Data.Usage..MB.day."))
+
+# 4. Visualizations
+# Plot 1: Density plot of App Usage Time by Operating System
+p1 <- ggplot(data, aes(x = App.Usage.Time..min.day., fill = Operating.System)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "App Usage Time Distribution by OS",
+       x = "Daily App Usage (minutes)",
+       y = "Density") +
+  theme_minimal()
+
+# Plot 2: Scatter plot with correlation between Battery Drain and Screen Time
+p2 <- ggplot(data, aes(x = Screen.On.Time..hours.day., 
+                       y = Battery.Drain..mAh.day., 
+                       color = Operating.System)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = FALSE) +
+  facet_wrap(~Device.Model) +
+  labs(title = "Battery Drain vs Screen Time by Device",
+       x = "Screen Time (hours/day)",
+       y = "Battery Drain (mAh/day)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45))
+
+# Plot 3: Violin plot of Data Usage by User Behavior Class
+p3 <- ggplot(data, aes(x = as.factor(User.Behavior.Class), 
+                       y = Data.Usage..MB.day., 
+                       fill = Gender)) +
+  geom_violin() +
+  labs(title = "Data Usage Distribution by User Behavior Class and Gender",
+       x = "User Behavior Class",
+       y = "Daily Data Usage (MB)") +
+  theme_minimal()
+
+# Plot 4: Hexbin plot of App Usage vs Number of Apps
+p4 <- ggplot(data, aes(x = Number.of.Apps.Installed, 
+                       y = App.Usage.Time..min.day.)) +
+  geom_hex(bins = 30) +
+  facet_wrap(~Operating.System) +
+  scale_fill_viridis_c() +
+  labs(title = "App Usage vs Number of Apps Installed",
+       x = "Number of Apps Installed",
+       y = "Daily App Usage (minutes)") +
+  theme_minimal()
+
+
+# Plot 5: Stacked bar plot of User Behavior Class distribution by Device
+p5 <- ggplot(data, aes(x = Device.Model, fill = as.factor(User.Behavior.Class))) +
+  geom_bar(position = "fill") +
+  labs(title = "User Behavior Class Distribution by Device",
+       x = "Device Model",
+       y = "Proportion",
+       fill = "Behavior Class") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Plot 6: Age distribution by Gender and OS
+p6 <- ggplot(data, aes(x = Age, fill = Gender)) +
+  geom_histogram(position = "dodge", bins = 30, alpha = 0.7) +
+  facet_wrap(~Operating.System) +
+  labs(title = "Age Distribution by Gender and Operating System",
+       x = "Age",
+       y = "Count") +
+  theme_minimal()
+
+```
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
