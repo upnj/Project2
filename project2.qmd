@@ -9,7 +9,6 @@ editor: visual
 
 ```{r}
 
-
 # Load required libraries
 library(tidyverse)
 library(ggplot2)
