@@ -129,6 +129,7 @@ p6 <- ggplot(data, aes(x = Age, fill = Gender)) +
        x = "Age",
        y = "Count") +
   theme_minimal()
+
 print(p6)
 
 # Display all plots in a grid
