@@ -1,99 +1,107 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    https://shiny.posit.co/
-#
-
-#install.packages('rsconnect')
-# Load required libraries
+# app.R
 library(shiny)
 library(tidyverse)
 library(DT)
 library(bslib)
 library(shinycssloaders)
-data <- read.csv("C:\\Users\\upnjo\\OneDrive\\Documents\\Project2\\user_behavior_dataset.csv")
+library(viridis)  # Added for better heatmap colors
 
-# UI Definition
+# Read data with only required columns
+data <- read.csv("user_behavior_dataset.csv") %>%
+  select(Device.Model, 
+         Operating.System, 
+         "App.Usage.Time" = App.Usage.Time..min.day.,
+         "Screen.Time" = Screen.On.Time..hours.day.,
+         "Battery.Drain" = Battery.Drain..mAh.day.,
+         "Number.of.Apps" = Number.of.Apps.Installed,
+         "Data.Usage" = Data.Usage..MB.day.,
+         Age,
+         Gender,
+         "User.Behavior.Class" = User.Behavior.Class)
+
+# Create variable labels mapping for numeric variables only
+numeric_vars <- c(
+  "App Usage Time" = "App.Usage.Time",
+  "Screen Time" = "Screen.Time",
+  "Battery Drain" = "Battery.Drain",
+  "Number of Apps" = "Number.of.Apps",
+  "Data Usage" = "Data.Usage",
+  "Age" = "Age"
+)
+
+# UI
 ui <- page_sidebar(
   title = "Smartphone User Behavior Analysis",
   theme = bs_theme(version = 5, bootswatch = "flatly"),
   
-  # Sidebar panel
+  # Sidebar
   sidebar = sidebar(
     # Categorical variable selectors
     selectInput("device_select", "Select Device Model",
-                choices = c("All", unique(data$Device.Model)),
+                choices = c("All", sort(unique(data$Device.Model))),
                 selected = "All"),
     
     selectInput("os_select", "Select Operating System",
-                choices = c("All", unique(data$Operating.System)),
+                choices = c("All", sort(unique(data$Operating.System))),
                 selected = "All"),
     
     # First numeric variable selector
     selectInput("num_var1", "Select First Numeric Variable",
-                choices = c(
-                  "App Usage Time" = "App.Usage.Time..min.day.",
-                  "Screen Time" = "Screen.On.Time..hours.day.",
-                  "Battery Drain" = "Battery.Drain..mAh.day.",
-                  "Number of Apps" = "Number.of.Apps.Installed",
-                  "Data Usage" = "Data.Usage..MB.day.",
-                  "Age" = "Age"
-                )),
+                choices = numeric_vars,
+                selected = "App.Usage.Time"),
     
-    # Dynamic slider for first numeric variable
+    # Dynamic UI for first numeric variable range
     uiOutput("slider1"),
     
     # Second numeric variable selector
     selectInput("num_var2", "Select Second Numeric Variable",
-                choices = c(
-                  "App Usage Time" = "App.Usage.Time..min.day.",
-                  "Screen Time" = "Screen.On.Time..hours.day.",
-                  "Battery Drain" = "Battery.Drain..mAh.day.",
-                  "Number of Apps" = "Number.of.Apps.Installed",
-                  "Data Usage" = "Data.Usage..MB.day.",
-                  "Age" = "Age"
-                )),
+                choices = numeric_vars,
+                selected = "Battery.Drain"),
     
-    # Dynamic slider for second numeric variable
+    # Dynamic UI for second numeric variable range
     uiOutput("slider2"),
     
-    # Update button
+    # Action button
     actionButton("update_data", "Update Analysis",
                  class = "btn-primary"),
     
     hr(),
     
-    # Current selection summary
-    textOutput("selection_text")
+    # Record count
+    textOutput("record_count")
   ),
   
-  # Main panel with tabs
+  # Main Panel
   navset_tab(
     # About tab
     nav_panel("About",
               h2("Smartphone User Behavior Analysis"),
-              tags$img(src = "smartphone.jpg", 
-                       height = 200,
-                       alt = "Smartphone Usage Illustration"),
-              p("This application analyzes patterns in smartphone usage across different devices and user demographics."),
+              # Add the image here
+              div(
+                style = "text-align: left; margin: 20px 0;",  # Centers the image and adds margin
+                img(src = "smartphone.jpg",  # Image file from www folder
+                    height = "200px",        # Set height
+                    alt = "Smartphone Image",# Alternative text
+                    style = "border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"  # Optional styling
+                )
+              ),
+              p("This application analyzes smartphone usage patterns across different devices and user demographics."),
               
-              h3("Data Description"),
-              p("The dataset contains information about smartphone usage patterns including:"),
+              h3("Variables Included"),
               tags$ul(
-                tags$li("Device and OS information"),
-                tags$li("Usage metrics (screen time, battery usage, etc.)"),
-                tags$li("User demographics"),
-                tags$li("Behavioral classification")
+                tags$li("Device Information: Model and Operating System"),
+                tags$li("Usage Metrics: App Usage Time, Screen Time, Battery Drain"),
+                tags$li("App Statistics: Number of Apps, Data Usage"),
+                tags$li("User Information: Age, Gender"),
+                tags$li("Behavior Classification")
               ),
               
-              h3("How to Use This App"),
+              h3("How to Use"),
               tags$ul(
-                tags$li("Use the sidebar to filter data based on device type, operating system, and numeric ranges"),
-                tags$li("The 'Data Download' tab allows you to view and download the filtered dataset"),
-                tags$li("The 'Data Exploration' tab provides various visualizations and statistical summaries")
+                tags$li("Use sidebar filters to select specific subsets of data"),
+                tags$li("Click 'Update Analysis' to apply filters"),
+                tags$li("Explore data in different tabs"),
+                tags$li("Download filtered data if needed")
               )
     ),
     
@@ -112,14 +120,8 @@ ui <- page_sidebar(
                           fluidRow(
                             column(6,
                                    selectInput("summary_var", "Variable to Summarize",
-                                               choices = c(
-                                                 "App Usage Time" = "App.Usage.Time..min.day.",
-                                                 "Screen Time" = "Screen.On.Time..hours.day.",
-                                                 "Battery Drain" = "Battery.Drain..mAh.day.",
-                                                 "Number of Apps" = "Number.of.Apps.Installed",
-                                                 "Data Usage" = "Data.Usage..MB.day.",
-                                                 "Age" = "Age"
-                                               ))
+                                               choices = numeric_vars,
+                                               selected = "App.Usage.Time")
                             ),
                             column(6,
                                    selectInput("group_var", "Group By",
@@ -134,18 +136,6 @@ ui <- page_sidebar(
                           verbatimTextOutput("stat_summary") %>% withSpinner()
                 ),
                 
-                # Categorical Summaries tab
-                nav_panel("Categorical Summaries",
-                          selectInput("cat_var", "Select Categorical Variable",
-                                      choices = c(
-                                        "Device Model" = "Device.Model",
-                                        "Operating System" = "Operating.System",
-                                        "Gender" = "Gender",
-                                        "User Behavior Class" = "User.Behavior.Class"
-                                      )),
-                          verbatimTextOutput("cat_summary") %>% withSpinner()
-                ),
-                
                 # Visualizations tab
                 nav_panel("Visualizations",
                           fluidRow(
@@ -154,10 +144,10 @@ ui <- page_sidebar(
                                                choices = c(
                                                  "Density Plot" = "density",
                                                  "Scatter Plot" = "scatter",
-                                                 "Violin Plot" = "violin",
                                                  "Box Plot" = "box",
                                                  "Bar Plot" = "bar",
-                                                 "Heat Map" = "heat"
+                                                 "Violin Plot" = "violin",
+                                                 "Heat Map" = "heatmap"
                                                ))
                             ),
                             column(4, uiOutput("x_var_ui")),
@@ -188,38 +178,30 @@ ui <- page_sidebar(
   )
 )
 
-# Server Definition
+# Server
 server <- function(input, output, session) {
-  
-  # Variable labels for better display
-  var_labels <- c(
-    "App.Usage.Time..min.day." = "App Usage Time (min/day)",
-    "Screen.On.Time..hours.day." = "Screen Time (hours/day)",
-    "Battery.Drain..mAh.day." = "Battery Drain (mAh/day)",
-    "Number.of.Apps.Installed" = "Number of Apps",
-    "Data.Usage..MB.day." = "Data Usage (MB/day)",
-    "Age" = "Age"
-  )
   
   # Dynamic UI elements for numeric variable sliders
   output$slider1 <- renderUI({
     req(input$num_var1)
     var_range <- range(data[[input$num_var1]], na.rm = TRUE)
     sliderInput("num_var1_range",
-                paste("Range of", var_labels[input$num_var1]),
+                paste("Range of", input$num_var1),
                 min = floor(var_range[1]),
                 max = ceiling(var_range[2]),
-                value = var_range)
+                value = var_range,
+                step = ifelse(input$num_var1 == "Screen.Time", 0.1, 1))
   })
   
   output$slider2 <- renderUI({
     req(input$num_var2)
     var_range <- range(data[[input$num_var2]], na.rm = TRUE)
     sliderInput("num_var2_range",
-                paste("Range of", var_labels[input$num_var2]),
+                paste("Range of", input$num_var2),
                 min = floor(var_range[1]),
                 max = ceiling(var_range[2]),
-                value = var_range)
+                value = var_range,
+                step = ifelse(input$num_var2 == "Screen.Time", 0.1, 1))
   })
   
   # Reactive filtered dataset
@@ -250,14 +232,22 @@ server <- function(input, output, session) {
     data_subset
   })
   
-  # Dynamic selection text
-  output$selection_text <- renderText({
-    paste("Currently showing", nrow(filtered_data()), "records")
+  # Record count
+  output$record_count <- renderText({
+    paste("Records shown:", nrow(filtered_data()))
   })
   
   # Data table output
   output$data_table <- DT::renderDataTable({
-    filtered_data()
+    DT::datatable(
+      filtered_data(),
+      options = list(
+        pageLength = 10,
+        scrollX = TRUE,
+        searching = TRUE,
+        ordering = TRUE
+      )
+    )
   })
   
   # Download handler
@@ -270,74 +260,74 @@ server <- function(input, output, session) {
     }
   )
   
+  # Statistical summary output
+  output$stat_summary <- renderPrint({
+    req(filtered_data(), input$summary_var, input$group_var)
+    
+    # Get the data
+    df <- filtered_data()
+    
+    # Convert User Behavior Class to factor if it's the grouping variable
+    if(input$group_var == "User.Behavior.Class") {
+      df$User.Behavior.Class <- as.factor(df$User.Behavior.Class)
+    }
+    
+    # Create summary statistics
+    summary_stats <- df %>%
+      group_by(!!sym(input$group_var)) %>%
+      summarise(
+        n = n(),
+        Mean = round(mean(!!sym(input$summary_var), na.rm = TRUE), 2),
+        SD = round(sd(!!sym(input$summary_var), na.rm = TRUE), 2),
+        Median = round(median(!!sym(input$summary_var), na.rm = TRUE), 2),
+        Min = round(min(!!sym(input$summary_var), na.rm = TRUE), 2),
+        Max = round(max(!!sym(input$summary_var), na.rm = TRUE), 2),
+        .groups = "drop"
+      ) %>%
+      arrange(if(input$group_var == "User.Behavior.Class") 
+        as.numeric(as.character(!!sym(input$group_var))) 
+        else 
+          desc(n))
+    
+    # Print the summary
+    cat("\nSummary Statistics for", gsub("\\.", " ", input$summary_var), 
+        "grouped by", gsub("\\.", " ", input$group_var), "\n\n")
+    print(summary_stats, n = nrow(summary_stats))
+  })
+  
   # Dynamic UI for plot variables
   output$x_var_ui <- renderUI({
-    num_vars <- c(
-      "App Usage Time" = "App.Usage.Time..min.day.",
-      "Screen Time" = "Screen.On.Time..hours.day.",
-      "Battery Drain" = "Battery.Drain..mAh.day.",
-      "Number of Apps" = "Number.of.Apps.Installed",
-      "Data Usage" = "Data.Usage..MB.day.",
-      "Age" = "Age"
-    )
-    
-    cat_vars <- c(
-      "Device Model" = "Device.Model",
-      "Operating System" = "Operating.System",
-      "Gender" = "Gender",
-      "User Behavior Class" = "User.Behavior.Class"
-    )
-    
     choices <- switch(input$plot_type,
-                      "density" = num_vars,
-                      "scatter" = num_vars,
-                      "violin" = cat_vars,
-                      "box" = cat_vars,
-                      "bar" = cat_vars,
-                      "heat" = num_vars)
+                      "density" = numeric_vars,
+                      "scatter" = numeric_vars,
+                      "heatmap" = numeric_vars,
+                      "box" = c(
+                        "Device Model" = "Device.Model",
+                        "Operating System" = "Operating.System",
+                        "Gender" = "Gender",
+                        "User Behavior Class" = "User.Behavior.Class"
+                      ),
+                      "bar" = c(
+                        "Device Model" = "Device.Model",
+                        "Operating System" = "Operating.System",
+                        "Gender" = "Gender",
+                        "User Behavior Class" = "User.Behavior.Class"
+                      ),
+                      "violin" = c(
+                        "Device Model" = "Device.Model",
+                        "Operating System" = "Operating.System",
+                        "Gender" = "Gender",
+                        "User Behavior Class" = "User.Behavior.Class"
+                      ))
     
     selectInput("x_var", "X Variable", choices = choices)
   })
   
   output$y_var_ui <- renderUI({
-    num_vars <- c(
-      "App Usage Time" = "App.Usage.Time..min.day.",
-      "Screen Time" = "Screen.On.Time..hours.day.",
-      "Battery Drain" = "Battery.Drain..mAh.day.",
-      "Number of Apps" = "Number.of.Apps.Installed",
-      "Data Usage" = "Data.Usage..MB.day.",
-      "Age" = "Age"
-    )
-    
-    if(input$plot_type %in% c("scatter", "violin", "box", "heat")) {
-      selectInput("y_var", "Y Variable", choices = num_vars)
+    if(input$plot_type %in% c("scatter", "box", "violin", "heatmap")) {
+      selectInput("y_var", "Y Variable", 
+                  choices = numeric_vars)
     }
-  })
-  
-  # Statistical summary output
-  output$stat_summary <- renderPrint({
-    req(filtered_data(), input$summary_var, input$group_var)
-    
-    filtered_data() %>%
-      group_by(!!sym(input$group_var)) %>%
-      summarise(
-        n = n(),
-        Mean = mean(!!sym(input$summary_var)),
-        SD = sd(!!sym(input$summary_var)),
-        Median = median(!!sym(input$summary_var)),
-        Min = min(!!sym(input$summary_var)),
-        Max = max(!!sym(input$summary_var))
-      )
-  })
-  
-  # Categorical summary output
-  output$cat_summary <- renderPrint({
-    req(filtered_data(), input$cat_var)
-    
-    table_summary <- table(filtered_data()[[input$cat_var]])
-    print(table_summary)
-    cat("\nPercentages:\n")
-    print(round(prop.table(table_summary) * 100, 2))
   })
   
   # Plot generation
@@ -347,52 +337,70 @@ server <- function(input, output, session) {
     df <- filtered_data()
     p <- ggplot(df)
     
-    # Add color aesthetic if selected
-    if(input$color_var != "None") {
-      color_mapping <- aes_string(color = input$color_var, fill = input$color_var)
+    # Add color aesthetic if selected (modified this part)
+    if(input$color_var != "None" && input$plot_type != "heatmap") {  # Don't add color for heatmap
+      color_mapping <- aes_string(color = input$color_var, 
+                                  fill = input$color_var)
       p <- p + color_mapping
     }
     
     # Create specific plot based on type
     p <- switch(input$plot_type,
                 "density" = p + 
-                  geom_density(aes_string(x = input$x_var), alpha = 0.5),
+                  geom_density(aes_string(x = input$x_var), 
+                               alpha = 0.5),
                 
                 "scatter" = {
                   req(input$y_var)
                   p + 
-                    geom_point(aes_string(x = input$x_var, y = input$y_var), 
+                    geom_point(aes_string(x = input$x_var, 
+                                          y = input$y_var), 
                                alpha = 0.6) +
-                    geom_smooth(aes_string(x = input$x_var, y = input$y_var), 
+                    geom_smooth(aes_string(x = input$x_var, 
+                                           y = input$y_var), 
                                 method = "lm", se = FALSE)
-                },
-                
-                "violin" = {
-                  req(input$y_var)
-                  p + 
-                    geom_violin(aes_string(x = input$x_var, y = input$y_var), 
-                                alpha = 0.5)
                 },
                 
                 "box" = {
                   req(input$y_var)
                   p + 
-                    geom_boxplot(aes_string(x = input$x_var, y = input$y_var))
+                    geom_boxplot(aes_string(x = input$x_var, 
+                                            y = input$y_var))
                 },
                 
                 "bar" = p + 
                   geom_bar(aes_string(x = input$x_var)),
                 
-                "heat" = {
+                "violin" = {
                   req(input$y_var)
                   p + 
-                    geom_bin2d(aes_string(x = input$x_var, y = input$y_var)) +
-                    scale_fill_viridis_c()
+                    geom_violin(aes_string(x = input$x_var, 
+                                           y = input$y_var), 
+                                alpha = 0.5)
+                },
+                
+                "heatmap" = {
+                  req(input$y_var)
+                  
+                  # Base heatmap plot
+                  p <- ggplot(df, aes_string(x = input$x_var, y = input$y_var)) +
+                    geom_bin2d(bins = 30) +
+                    scale_fill_viridis_c(option = "plasma", 
+                                         name = "Count") +
+                    theme(panel.grid = element_blank())
+                  
+                  # If color variable is selected, create separate heatmaps
+                  if(input$color_var != "None") {
+                    p <- p + facet_wrap(as.formula(paste("~", input$color_var)))
+                  }
+                  
+                  p
                 }
     )
     
-    # Add faceting if selected
-    if(input$facet_var != "None") {
+    # Add faceting if selected (and not already added for heatmap)
+    if(input$facet_var != "None" && 
+       !(input$plot_type == "heatmap" && input$color_var != "None")) {
       p <- p + facet_wrap(as.formula(paste("~", input$facet_var)))
     }
     
@@ -402,12 +410,17 @@ server <- function(input, output, session) {
       theme(
         axis.text.x = element_text(angle = 45, hjust = 1),
         plot.title = element_text(hjust = 0.5),
-        legend.position = "bottom"
+        legend.position = "right"  # Changed to right for heatmap
       ) +
       labs(
-        title = paste("Plot of", var_labels[input$x_var]),
-        x = var_labels[input$x_var],
-        y = if(!is.null(input$y_var)) var_labels[input$y_var] else "Count"
+        title = if(input$plot_type == "heatmap") 
+          paste("Heatmap of", gsub("\\.", " ", input$x_var), 
+                "vs", gsub("\\.", " ", input$y_var))
+        else 
+          paste("Plot of", gsub("\\.", " ", input$x_var)),
+        x = gsub("\\.", " ", input$x_var),
+        y = if(!is.null(input$y_var)) 
+          gsub("\\.", " ", input$y_var) else "Count"
       )
     
     print(p)

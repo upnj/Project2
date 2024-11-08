@@ -75,7 +75,7 @@ p1 <- ggplot(data, aes(x = App.Usage.Time..min.day., fill = Operating.System)) +
        x = "Daily App Usage (minutes)",
        y = "Density") +
   theme_minimal()
-
+print(p1)
 # Plot 2: Scatter plot with correlation between Battery Drain and Screen Time
 p2 <- ggplot(data, aes(x = Screen.On.Time..hours.day., 
                        y = Battery.Drain..mAh.day., 
@@ -88,7 +88,7 @@ p2 <- ggplot(data, aes(x = Screen.On.Time..hours.day.,
        y = "Battery Drain (mAh/day)") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45))
-
+print(p2)
 # Plot 3: Violin plot of Data Usage by User Behavior Class
 p3 <- ggplot(data, aes(x = as.factor(User.Behavior.Class), 
                        y = Data.Usage..MB.day., 
@@ -98,7 +98,7 @@ p3 <- ggplot(data, aes(x = as.factor(User.Behavior.Class),
        x = "User Behavior Class",
        y = "Daily Data Usage (MB)") +
   theme_minimal()
-
+print(p3)
 # Plot 4: Hexbin plot of App Usage vs Number of Apps
 p4 <- ggplot(data, aes(x = Number.of.Apps.Installed, 
                        y = App.Usage.Time..min.day.)) +
@@ -109,7 +109,7 @@ p4 <- ggplot(data, aes(x = Number.of.Apps.Installed,
        x = "Number of Apps Installed",
        y = "Daily App Usage (minutes)") +
   theme_minimal()
-
+print(p4)
 
 # Plot 5: Stacked bar plot of User Behavior Class distribution by Device
 p5 <- ggplot(data, aes(x = Device.Model, fill = as.factor(User.Behavior.Class))) +
@@ -120,7 +120,7 @@ p5 <- ggplot(data, aes(x = Device.Model, fill = as.factor(User.Behavior.Class)))
        fill = "Behavior Class") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
+print(p5)
 # Plot 6: Age distribution by Gender and OS
 p6 <- ggplot(data, aes(x = Age, fill = Gender)) +
   geom_histogram(position = "dodge", bins = 30, alpha = 0.7) +
@@ -129,7 +129,10 @@ p6 <- ggplot(data, aes(x = Age, fill = Gender)) +
        x = "Age",
        y = "Count") +
   theme_minimal()
+print(p6)
 
+# Display all plots in a grid
+grid.arrange(p1, p2, p3, p4, p5, p6, ncol = 2)
 ```
 
 
