@@ -75,6 +75,7 @@ p1 <- ggplot(data, aes(x = App.Usage.Time..min.day., fill = Operating.System)) +
        x = "Daily App Usage (minutes)",
        y = "Density") +
   theme_minimal()
+
 print(p1)
 # Plot 2: Scatter plot with correlation between Battery Drain and Screen Time
 p2 <- ggplot(data, aes(x = Screen.On.Time..hours.day., 
@@ -88,6 +89,7 @@ p2 <- ggplot(data, aes(x = Screen.On.Time..hours.day.,
        y = "Battery Drain (mAh/day)") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45))
+
 print(p2)
 # Plot 3: Violin plot of Data Usage by User Behavior Class
 p3 <- ggplot(data, aes(x = as.factor(User.Behavior.Class), 
@@ -109,6 +111,7 @@ p4 <- ggplot(data, aes(x = Number.of.Apps.Installed,
        x = "Number of Apps Installed",
        y = "Daily App Usage (minutes)") +
   theme_minimal()
+
 print(p4)
 
 # Plot 5: Stacked bar plot of User Behavior Class distribution by Device
@@ -120,6 +123,7 @@ p5 <- ggplot(data, aes(x = Device.Model, fill = as.factor(User.Behavior.Class)))
        fill = "Behavior Class") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
 print(p5)
 # Plot 6: Age distribution by Gender and OS
 p6 <- ggplot(data, aes(x = Age, fill = Gender)) +
